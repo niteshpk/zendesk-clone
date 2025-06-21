@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server-start": "node server.js",
+    "server-start": "nodemon server.js",
     "client-start": "cd test && http-server ."
   },
   "keywords": [],
@@ -18,5 +18,9 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "nodemon": "^2.0.22"
   }
 }

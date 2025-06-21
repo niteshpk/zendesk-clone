@@ -35,6 +35,16 @@
   <!-- Widget Section -->
   <section>
     <h2>Create Widget</h2>
+    <form method="POST" action="/create-widget">
+      Widget Title: <input type="text" name="widgetTitle" /><br />
+      Welcome Text: <input type="text" name="welcomeText" /><br />
+      Logo URL: <input type="text" name="logoUrl" /><br />
+      Widget Color (Hex): <input type="text" name="color" /><br />
+      <input type="hidden" id="tenantIdInput" name="tenantId" value="" />
+      <button type="submit">Save Widget</button>
+    </form>
+
+    <hr>
 
     <h3>Widget Embed Code:</h3>
     <pre id="widgetCode"></pre>
@@ -86,6 +96,7 @@
         return;
       }
 
+      document.getElementById("tenantIdInput").value = tenantId;
       document.getElementById("tenantIdInput2").value = tenantId;
       document.getElementById("widgetCode").textContent =
         `<script src="http://localhost:3000/widget.js" data-tenant-id="${tenantId}"></` + "script>";
@@ -111,6 +122,15 @@
             row.insertCell(2).innerText = agent.username;
             row.insertCell(3).innerText = agent.plainPassword;
           });
+        });
+
+      fetch(`/widget-config/${tenantId}`)
+        .then(res => res.json())
+        .then(config => {
+          document.querySelector('[name="widgetTitle"]').value = config.widgetTitle || "";
+          document.querySelector('[name="welcomeText"]').value = config.welcomeText || "";
+          document.querySelector('[name="logoUrl"]').value = config.logoUrl || "";
+          document.querySelector('[name="color"]').value = config.color || "#000000";
         });
     }
   </script>

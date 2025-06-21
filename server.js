@@ -21,16 +21,33 @@ const tenants = {
     businessName: "Example Corp",
     email: "cb@email.com",
     password: "cv",
+    passwordHash:"$2b$10$uwYlkyH6jasKlxJu.loZCOvSaL7SfItEKHpli8YBh.Vs7d2Yo.5.e",
     tenantId: "tenant_1",
   },
   tenant_2: {
     businessName: "CWN",
     email: "cwn@email.com",
     password: "cwn",
+    passwordHash: "$2b$10$TDJlgDJo2pxuF2e2BN.55ePi.rnMz8YxelCNQm.CMiSCTLDid5C4.",
     tenantId: "tenant_2",
   },
 };
-const widgets = {};
+const widgets = {
+  tenant_1: {
+    tenantId: "tenant_1",
+    color: "#4CAF50",
+    widgetTitle: "Example Corp Support",
+    welcomeText: "Welcome to Example Corp support!",
+    logoUrl: "https://picsum.photos/id/1/75/75",
+  },
+  tenant_2: {
+    tenantId: "tenant_2",
+    color: "#2196F3",
+    widgetTitle: "CWN Support",
+    welcomeText: "Welcome to CWN support!",
+    logoUrl: "https://picsum.photos/id/1/50/50",
+  },
+};
 const agents = {
   tenant_1: [
     {
@@ -52,9 +69,9 @@ const agents = {
     {
       agentId: "agent_3",
       username: "c1",
-      plainPassword: "cw",
+      plainPassword: "c2",
       passwordHash:
-        "$2b$10$Np4wdzWOPVb1KH5qU8bvR.I3PmqSk6EE.iU2KKQ.6ib4Z6UfHxlb2",
+        "$2b$10$HbA1u3E/QzJBKajjFOu8Z.GthOBRZIXqnv5seim/E/XUre0Pickbe",
     },
     {
       agentId: "agent_4",
@@ -91,6 +108,18 @@ app.post("/tenant-signup", async (req, res) => {
     tenantId,
   };
 
+  // ✅ Automatically create default widget config
+  widgets[tenantId] = {
+    tenantId,
+    color: "#000000",
+    widgetTitle: `${businessName} Support`,
+    welcomeText: `Welcome to ${businessName} support!`,
+    logoUrl: ""
+  };
+
+  console.log(`Tenant created: ${tenantId}`);
+  console.log("Widget initialized for tenant:", widgets[tenantId]);
+
   res.redirect("/tenant-login");
 });
 
@@ -103,7 +132,7 @@ app.post("/tenant-login", async (req, res) => {
   if (!tenantEntry) {
     return res.send("Invalid credentials");
   }
-
+  console.log("Tenant login attempt:", await bcrypt.hash(password, 10));
   const match = await bcrypt.compare(password, tenantEntry.passwordHash);
   if (!match) {
     return res.send("Invalid credentials");
@@ -113,12 +142,27 @@ app.post("/tenant-login", async (req, res) => {
   res.redirect(`/tenant-dashboard.html`);
 });
 
+app.get('/widget-config/:tenantId', (req, res) => {
+  const tenantId = req.params.tenantId;
+  const config = widgets[tenantId];
+  res.json(config);
+});
+
 // Widget creation
 app.post("/create-widget", (req, res) => {
-  const { tenantId, color } = req.body;
-  widgets[tenantId] = { tenantId, color };
+  const { tenantId, color, welcomeText, widgetTitle, logoUrl } = req.body;
+  
+  widgets[tenantId] = {
+    tenantId,
+    color,
+    welcomeText,
+    widgetTitle,
+    logoUrl
+  };
+console.log("Widget created for tenant:", tenantId, widgets[tenantId]);
   res.redirect(`/tenant-dashboard.html`);
 });
+
 
 app.get("/chat-history/:tenantId", (req, res) => {
   const tenantId = req.params.tenantId;
@@ -175,6 +219,7 @@ app.post("/agent-login", async (req, res) => {
 
   if (!agent) return res.send("Invalid agent credentials");
 
+  console.log("Agent login attempt for:", await bcrypt.hash(password, 10), agent.passwordHash);
   const match = await bcrypt.compare(password, agent.passwordHash);
   if (!match) return res.send("Invalid agent login credentials");
 

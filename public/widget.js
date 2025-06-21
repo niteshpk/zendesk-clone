@@ -29,31 +29,52 @@
     tenantInfo.innerHTML = `<strong>Connected to Tenant ID:</strong> ${tenantId}`;
     document.body.insertBefore(tenantInfo, document.body.firstChild);
 
-    const chatDiv = document.createElement("div");
-    chatDiv.innerHTML = `
-      <div id="chat-window" style="border:1px solid black; padding:10px; width:auto;">
-        <h3>Chat with us!</h3>
-        <div id="messages" style="border:1px solid black; height:300px; overflow-y:auto; padding:10px;"></div>
-        <input id="chat_input" placeholder="Type message..." style="width:200px;" />
-        <button id="send_btn">Send</button>
-      </div>`;
-    document.body.appendChild(chatDiv);
+    fetch(`http://localhost:3000/widget-config/${tenantId}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Widget config not found");
+        return res.json();
+      })
+      .then((config) => {
+        const chatDiv = document.createElement("div");
+        chatDiv.style.border = `2px solid ${config.color || "#000000"}`;
+        chatDiv.style.padding = "10px";
+        chatDiv.style.margin = "10px";
+        chatDiv.innerHTML = `
+         <div style="display: flex; align-items: center;">
+            ${
+              config.logoUrl
+                ? `<img src="${config.logoUrl}" width="50" height="50" style="margin-right:10px; border-radius: 25px;"/>`
+                : ""
+            }
+            <h3 style="color:${config.color}; margin:0;">${
+          config.widgetTitle
+        }</h3>
+          </div>
+          <p>${config.welcomeText}</p>
+          <div id="messages"></div> 
+          <input id="chat_input" placeholder="Type message..." />
+          <button id="send_btn">Send</button>
+        `;
+        document.body.appendChild(chatDiv);
 
-    const statusDiv = document.createElement("div");
-    statusDiv.id = "agentStatus";
-    statusDiv.innerHTML = `<p><strong>Agents Online:</strong> Loading...</p>`;
-    chatDiv.insertBefore(statusDiv, chatDiv.firstChild);
+        updateAgentStatus(tenantId);
+        setInterval(() => {
+          updateAgentStatus(tenantId);
+        }, 60000); // every 1 minutes
 
-    updateAgentStatus(tenantId);
-    setInterval(() => {
-      updateAgentStatus(tenantId);
-    }, 60000); // every 1 minutes
+        const statusDiv = document.createElement("div");
+        statusDiv.id = "agentStatus";
+        statusDiv.innerHTML = `<p><strong>Agents Online:</strong> Loading...</p>`;
+        chatDiv.insertBefore(statusDiv, chatDiv.firstChild);
+      })
+      .catch((err) => {
+        console.error("Widget config fetch failed", err);
+      });
 
     // Load chat history first
     fetch(`http://localhost:3000/chat-history/${tenantId}`)
       .then((res) => res.json())
       .then((history) => {
-        const messagesDiv = document.getElementById("messages");
         history.forEach((entry) => {
           const messageBlock = document.createElement("div");
           if (entry.type === "client_message") {
