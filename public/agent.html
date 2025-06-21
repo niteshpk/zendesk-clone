@@ -3,6 +3,9 @@
 
 <head>
   <title>Agent Interface</title>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
 </head>
 
 <body>
@@ -33,6 +36,14 @@
     function deleteCookie(name) {
       document.cookie = name + '=; Max-Age=0; path=/';
     }
+
+    window.addEventListener("pageshow", () => {
+      const tenantId = getCookie('tenantId');
+      if (!tenantId) {
+        alert("Session expired. Please login again.");
+        window.location.href = '/agent-login';
+      }
+    });
 
     let tenantId = getCookie('tenantId');
     let agentUsername = getCookie('agentUsername');

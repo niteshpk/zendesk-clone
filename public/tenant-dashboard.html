@@ -3,6 +3,9 @@
 
 <head>
   <title>Tenant Dashboard</title>
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <style>
     table,
     td,
@@ -20,7 +23,7 @@
   <!-- Navigation -->
   <nav>
     <a href="/tenant-dashboard.html" id="refreshLink">Refresh Dashboard</a> |
-    <a href="/tenant-login">Logout</a>
+    <button id="logoutBtn">Logout</button>
   </nav>
 
   <hr>
@@ -87,6 +90,17 @@
       if (parts.length === 2) return parts.pop().split(';').shift();
     }
 
+    function deleteCookie(name) {
+      document.cookie = name + '=; Max-Age=0; path=/';
+    }
+
+    window.addEventListener("pageshow", () => {
+      const tenantId = getCookie('tenantId');
+      if (!tenantId) {
+        alert("Session expired. Please login again.");
+        window.location.href = '/tenant-login';
+      }
+    });
 
     window.onload = function () {
       const tenantId = getCookie('tenantId');
@@ -95,6 +109,11 @@
         window.location.href = '/tenant-login';
         return;
       }
+
+      document.getElementById('logoutBtn').onclick = () => {
+        deleteCookie('tenantId');
+        window.location.href = '/tenant-login';
+      };
 
       document.getElementById("tenantIdInput").value = tenantId;
       document.getElementById("tenantIdInput2").value = tenantId;
@@ -132,6 +151,9 @@
           document.querySelector('[name="logoUrl"]').value = config.logoUrl || "";
           document.querySelector('[name="color"]').value = config.color || "#000000";
         });
+
+
+
     }
   </script>
 

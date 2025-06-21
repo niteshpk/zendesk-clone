@@ -132,7 +132,7 @@ app.post("/tenant-login", async (req, res) => {
   if (!tenantEntry) {
     return res.send("Invalid credentials");
   }
-  console.log("Tenant login attempt:", await bcrypt.hash(password, 10));
+  
   const match = await bcrypt.compare(password, tenantEntry.passwordHash);
   if (!match) {
     return res.send("Invalid credentials");
