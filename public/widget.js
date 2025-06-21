@@ -1,4 +1,13 @@
 (function () {
+
+  function updateAgentStatus(tenantId) {
+    fetch(`http://localhost:3000/online-agents/${tenantId}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('agentStatus').innerHTML = `<p><strong>Agents Online:</strong> ${data.onlineAgents}</p>`;
+    });
+  }
+
   window.addEventListener('load', () => {
     const scripts = document.getElementsByTagName('script');
     let tenantId = null;
@@ -29,6 +38,16 @@
         <button id="send_btn">Send</button>
       </div>`;
     document.body.appendChild(chatDiv);
+
+    const statusDiv = document.createElement('div');
+    statusDiv.id = 'agentStatus';
+    statusDiv.innerHTML = `<p><strong>Agents Online:</strong> Loading...</p>`;
+    chatDiv.insertBefore(statusDiv, chatDiv.firstChild);
+
+      updateAgentStatus(tenantId);
+    setInterval(() => {
+      updateAgentStatus(tenantId);
+    }, 60000);  // every 1 minutes
 
     // Load chat history first
     fetch(`http://localhost:3000/chat-history/${tenantId}`)

@@ -4,6 +4,7 @@
 <body>
   <h2>Agent Interface</h2>
   <p>Logged in as: <strong id="agentInfo"></strong></p>
+  <button id="logoutBtn">Logout</button>
 
   <div id="messages" style="border:1px solid black; height:300px; overflow-y:auto; padding:10px;"></div>
   <input id="reply_input" placeholder="Type reply..." style="width:200px;" />
@@ -18,6 +19,10 @@
       if (parts.length === 2) return parts.pop().split(';').shift();
     }
 
+    function deleteCookie(name) {
+      document.cookie = name + '=; Max-Age=0; path=/';
+    }
+
     let tenantId = getCookie('tenantId');
     let agentUsername = getCookie('agentUsername');
 
@@ -27,7 +32,13 @@
     }
 
     // Show agent info
-document.getElementById("agentInfo").innerText = `Agent: ${agentUsername} | Tenant ID: ${tenantId}`;
+    document.getElementById("agentInfo").innerText = `Agent: ${agentUsername} | Tenant ID: ${tenantId}`;
+
+    document.getElementById('logoutBtn').onclick = () => {
+      deleteCookie('tenantId');
+      deleteCookie('agentUsername');
+      window.location.href = '/agent-login';
+    };
 
     // Load chat history first
     fetch(`/chat-history/${tenantId}`)
