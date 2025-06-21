@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
-<head><title>Agent Interface</title></head>
+
+<head>
+  <title>Agent Interface</title>
+</head>
+
 <body>
   <h2>Agent Interface</h2>
   <p>Logged in as: <strong id="agentInfo"></strong></p>
@@ -86,7 +90,7 @@
           document.getElementById('reply_input').value = '';
         };
 
-        document.getElementById('reply_input').addEventListener('keyup', function(event) {
+        document.getElementById('reply_input').addEventListener('keyup', function (event) {
           if (event.key === 'Enter') {
             document.getElementById('reply_btn').click();
           }
@@ -94,4 +98,5 @@
       });
   </script>
 </body>
+
 </html>

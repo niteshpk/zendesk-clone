@@ -1,20 +1,21 @@
 (function () {
-
   function updateAgentStatus(tenantId) {
     fetch(`http://localhost:3000/online-agents/${tenantId}`)
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById('agentStatus').innerHTML = `<p><strong>Agents Online:</strong> ${data.onlineAgents}</p>`;
-    });
+      .then((res) => res.json())
+      .then((data) => {
+        document.getElementById(
+          "agentStatus"
+        ).innerHTML = `<p><strong>Agents Online:</strong> ${data.onlineAgents}</p>`;
+      });
   }
 
-  window.addEventListener('load', () => {
-    const scripts = document.getElementsByTagName('script');
+  window.addEventListener("load", () => {
+    const scripts = document.getElementsByTagName("script");
     let tenantId = null;
 
     for (let i = 0; i < scripts.length; i++) {
-      if (scripts[i].src.includes('widget.js')) {
-        tenantId = scripts[i].getAttribute('data-tenant-id');
+      if (scripts[i].src.includes("widget.js")) {
+        tenantId = scripts[i].getAttribute("data-tenant-id");
         break;
       }
     }
@@ -24,12 +25,11 @@
       return;
     }
 
-
-    const tenantInfo = document.createElement('p');
+    const tenantInfo = document.createElement("p");
     tenantInfo.innerHTML = `<strong>Connected to Tenant ID:</strong> ${tenantId}`;
     document.body.insertBefore(tenantInfo, document.body.firstChild);
 
-    const chatDiv = document.createElement('div');
+    const chatDiv = document.createElement("div");
     chatDiv.innerHTML = `
       <div id="chat-window" style="border:1px solid black; padding:10px; width:auto;">
         <h3>Chat with us!</h3>
@@ -39,66 +39,66 @@
       </div>`;
     document.body.appendChild(chatDiv);
 
-    const statusDiv = document.createElement('div');
-    statusDiv.id = 'agentStatus';
+    const statusDiv = document.createElement("div");
+    statusDiv.id = "agentStatus";
     statusDiv.innerHTML = `<p><strong>Agents Online:</strong> Loading...</p>`;
     chatDiv.insertBefore(statusDiv, chatDiv.firstChild);
 
-      updateAgentStatus(tenantId);
+    updateAgentStatus(tenantId);
     setInterval(() => {
       updateAgentStatus(tenantId);
-    }, 60000);  // every 1 minutes
+    }, 60000); // every 1 minutes
 
     // Load chat history first
     fetch(`http://localhost:3000/chat-history/${tenantId}`)
-      .then(res => res.json())
-      .then(history => {
-        const messagesDiv = document.getElementById('messages');
-        history.forEach(entry => {
-          const messageBlock = document.createElement('div');
-          if (entry.type === 'client_message') {
+      .then((res) => res.json())
+      .then((history) => {
+        const messagesDiv = document.getElementById("messages");
+        history.forEach((entry) => {
+          const messageBlock = document.createElement("div");
+          if (entry.type === "client_message") {
             messageBlock.innerHTML = `<p><strong>Client:</strong> ${entry.message}</p>`;
-          } else if (entry.type === 'agent_reply') {
+          } else if (entry.type === "agent_reply") {
             messageBlock.innerHTML = `<p><strong>Agent (${entry.agentUsername}):</strong> ${entry.message}</p>`;
           }
-          document.getElementById('messages').appendChild(messageBlock);
+          document.getElementById("messages").appendChild(messageBlock);
         });
       });
 
     // Load socket.io client dynamically after history
-    const socketScript = document.createElement('script');
-    socketScript.src = 'http://localhost:3000/socket.io/socket.io.js';
+    const socketScript = document.createElement("script");
+    socketScript.src = "http://localhost:3000/socket.io/socket.io.js";
     socketScript.onload = () => {
-      const socket = io('http://localhost:3000');
-      socket.emit('join', tenantId);
+      const socket = io("http://localhost:3000");
+      socket.emit("join", tenantId);
 
-      document.getElementById('send_btn').onclick = () => {
-        const message = document.getElementById('chat_input').value.trim();
+      document.getElementById("send_btn").onclick = () => {
+        const message = document.getElementById("chat_input").value.trim();
         if (!message) return;
-        socket.emit('send_message', { tenantId, message });
+        socket.emit("send_message", { tenantId, message });
 
-        const msgDiv = document.createElement('div');
+        const msgDiv = document.createElement("div");
         msgDiv.innerHTML = `<p><strong>You:</strong> ${message}</p>`;
-        document.getElementById('messages').appendChild(msgDiv);
-        document.getElementById('chat_input').value = '';
+        document.getElementById("messages").appendChild(msgDiv);
+        document.getElementById("chat_input").value = "";
       };
 
-      document.getElementById('chat_input').addEventListener('keyup', function(event) {
-        if (event.key === 'Enter') {
-          document.getElementById('send_btn').click();
-        }
-      });
+      document
+        .getElementById("chat_input")
+        .addEventListener("keyup", function (event) {
+          if (event.key === "Enter") {
+            document.getElementById("send_btn").click();
+          }
+        });
 
-      socket.on('agent_reply', (data) => {
+      socket.on("agent_reply", (data) => {
         if (data.tenantId === tenantId) {
-          const replyDiv = document.createElement('div');
+          const replyDiv = document.createElement("div");
           replyDiv.innerHTML = `<p><strong>Agent (${data.agentUsername}):</strong> ${data.message}</p>`;
-          document.getElementById('messages').appendChild(replyDiv);
+          document.getElementById("messages").appendChild(replyDiv);
         }
       });
     };
     document.body.appendChild(socketScript);
-
-
   });
 })();
