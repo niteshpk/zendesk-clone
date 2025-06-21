@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head><title>Agent Interface</title></head>
+<body>
+  <h2>Agent Interface</h2>
+  <div id="messages"></div>
+  <input id="reply_input" placeholder="Type reply..." />
+  <button id="reply_btn">Send Reply</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    // No tenant room here — agent handles all tenants for now
+
+    let lastTenantId = null;
+    socket.on('new_message', (data) => {
+    const messageBlock = document.createElement('div');
+      messageBlock.innerHTML = `
+        <p><strong>Client (${data.tenantId}):</strong> ${data.message}</p>
+      `;
+      document.getElementById('messages').appendChild(messageBlock);
+      lastTenantId = data.tenantId;  // Always remember latest tenantId for reply
+    });
+
+    document.getElementById('reply_input').addEventListener('keyup', function(event) {
+      if (event.key === 'Enter') {
+        document.getElementById('reply_btn').click();
+      }
+    });
+
+
+    document.getElementById('reply_btn').onclick = () => {
+      const reply = document.getElementById('reply_input').value.trim();
+      if (!reply) return alert("Cannot send empty message");
+      if (!lastTenantId) return alert("No client to reply yet.");
+      socket.emit('reply_message', { tenantId: lastTenantId, message: reply });
+
+      const replyBlock = document.createElement('div');
+      replyBlock.innerHTML = `<p><strong>You:</strong> ${reply}</p>`;
+      document.getElementById('messages').appendChild(replyBlock);
+      document.getElementById('reply_input').value = '';
+    }
+  </script>
+</body>
+</html>

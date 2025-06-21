@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head><title>Dashboard</title></head>
+<body>
+<h2>Tenant Dashboard</h2>
+<form method="POST" action="/create-widget">
+  Widget Color: <input type="text" name="color" /><br/>
+  <input type="hidden" id="tenantIdInput" name="tenantId" value="" />
+  <button type="submit">Create Widget</button>
+</form>
+
+<form method="POST" action="/create-agent">
+  Agent Name: <input type="text" name="agentName" /><br/>
+  <input type="hidden" id="tenantIdInput2" name="tenantId" value="" />
+  <button type="submit">Create Agent</button>
+</form>
+
+<p>Your Widget Code:</p>
+<pre id="widgetCode"></pre>
+
+<script>
+  window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tenantId = urlParams.get('tenantId');
+    document.getElementById("tenantIdInput").value = tenantId;
+    document.getElementById("tenantIdInput2").value = tenantId;
+    document.getElementById("widgetCode").textContent =
+      "<script src='http://localhost:3000/widget.js?tenantId=" + tenantId + "'></" + "script>";
+  }
+</script>
+
+</body>
+</html>
