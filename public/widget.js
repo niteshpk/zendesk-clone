@@ -15,11 +15,16 @@
       return;
     }
 
+
+    const tenantInfo = document.createElement('p');
+    tenantInfo.innerHTML = `<strong>Connected to Tenant ID:</strong> ${tenantId}`;
+    document.body.insertBefore(tenantInfo, document.body.firstChild);
+
     const chatDiv = document.createElement('div');
     chatDiv.innerHTML = `
-      <div id="chat-window" style="border:1px solid black; padding:10px; width:300px;">
+      <div id="chat-window" style="border:1px solid black; padding:10px; width:auto;">
         <h3>Chat with us!</h3>
-        <div id="messages" style="height:200px; overflow-y:auto; border:1px solid gray; margin-bottom:10px;"></div>
+        <div id="messages" style="border:1px solid black; height:300px; overflow-y:auto; padding:10px;"></div>
         <input id="chat_input" placeholder="Type message..." style="width:200px;" />
         <button id="send_btn">Send</button>
       </div>`;
@@ -31,15 +36,13 @@
       .then(history => {
         const messagesDiv = document.getElementById('messages');
         history.forEach(entry => {
-          if (entry.message) {
-            const msgBlock = document.createElement('div');
-            if (entry.type === 'agent_reply') {
-              msgBlock.innerHTML = `<p><strong>Agent:</strong> ${entry.message}</p>`;
-            } else {
-              msgBlock.innerHTML = `<p><strong>You:</strong> ${entry.message}</p>`;
-            }
-            messagesDiv.appendChild(msgBlock);
+          const messageBlock = document.createElement('div');
+          if (entry.type === 'client_message') {
+            messageBlock.innerHTML = `<p><strong>Client:</strong> ${entry.message}</p>`;
+          } else if (entry.type === 'agent_reply') {
+            messageBlock.innerHTML = `<p><strong>Agent (${entry.agentUsername}):</strong> ${entry.message}</p>`;
           }
+          document.getElementById('messages').appendChild(messageBlock);
         });
       });
 
@@ -70,11 +73,13 @@
       socket.on('agent_reply', (data) => {
         if (data.tenantId === tenantId) {
           const replyDiv = document.createElement('div');
-          replyDiv.innerHTML = `<p><strong>Agent:</strong> ${data.message}</p>`;
+          replyDiv.innerHTML = `<p><strong>Agent (${data.agentUsername}):</strong> ${data.message}</p>`;
           document.getElementById('messages').appendChild(replyDiv);
         }
       });
     };
     document.body.appendChild(socketScript);
+
+
   });
 })();
