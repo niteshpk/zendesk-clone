@@ -56,6 +56,12 @@ app.post('/create-agent', (req, res) => {
   res.redirect(`/dashboard.html?tenantId=${tenantId}`);
 });
 
+app.get('/chat-history/:tenantId', (req, res) => {
+  const tenantId = req.params.tenantId;
+  const history = chats[tenantId] || [];
+  res.json(history);
+});
+
 // Agent interface
 app.get('/agent', (req, res) => res.sendFile(__dirname + '/public/agent.html'));
 
@@ -71,18 +77,13 @@ io.on('connection', (socket) => {
   socket.on('send_message', (data) => {
     console.log('Message received: ', data);
     chats[data.tenantId] = chats[data.tenantId] || [];
-    chats[data.tenantId].push(data);
-    
-    // Agent receives all messages globally
-    io.emit('new_message', data); 
-    
-    // Still keep emitting to client room for client reply isolation
-    io.to(data.tenantId).emit('client_message', data);
+    chats[data.tenantId].push({ ...data, type: 'client_message' });
+    io.emit('new_message', data);
   });
 
   socket.on('reply_message', (data) => {
     console.log('Reply sent: ', data);
-    chats[data.tenantId].push(data);
+    chats[data.tenantId].push({ ...data, type: 'agent_reply' });
     io.to(data.tenantId).emit('agent_reply', data);
   });
 

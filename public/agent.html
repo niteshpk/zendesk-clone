@@ -3,43 +3,74 @@
 <head><title>Agent Interface</title></head>
 <body>
   <h2>Agent Interface</h2>
-  <div id="messages"></div>
-  <input id="reply_input" placeholder="Type reply..." />
-  <button id="reply_btn">Send Reply</button>
+
+  <label for="tenantId">Enter Tenant ID:</label>
+  <input type="text" id="tenantIdInput" placeholder="tenant_..." />
+  <button id="loadTenantBtn">Load Chat</button>
+
+  <div id="chatSection" style="display:none;">
+    <div id="messages" style="border:1px solid black; height:300px; overflow-y:auto; padding:10px;"></div>
+    <input id="reply_input" placeholder="Type reply..." style="width:200px;" />
+    <button id="reply_btn">Send Reply</button>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    let socket;
+    let tenantId;
 
-    // No tenant room here — agent handles all tenants for now
+    document.getElementById('loadTenantBtn').onclick = () => {
+      tenantId = document.getElementById('tenantIdInput').value.trim();
+      if (!tenantId) return alert("Please enter Tenant ID");
 
-    let lastTenantId = null;
-    socket.on('new_message', (data) => {
-    const messageBlock = document.createElement('div');
-      messageBlock.innerHTML = `
-        <p><strong>Client (${data.tenantId}):</strong> ${data.message}</p>
-      `;
-      document.getElementById('messages').appendChild(messageBlock);
-      lastTenantId = data.tenantId;  // Always remember latest tenantId for reply
-    });
+      // Load chat history
+      fetch(`http://localhost:3000/chat-history/${tenantId}`)
+        .then(res => res.json())
+        .then(history => {
+          document.getElementById("messages").innerHTML = "";  // clear old messages
+          history.forEach(entry => {
+            const messageBlock = document.createElement('div');
+            if (entry.type === 'client_message') {
+              messageBlock.innerHTML = `<p><strong>Client:</strong> ${entry.message}</p>`;
+            } else {
+              messageBlock.innerHTML = `<p><strong>You:</strong> ${entry.message}</p>`;
+            }
+            document.getElementById('messages').appendChild(messageBlock);
+          });
 
-    document.getElementById('reply_input').addEventListener('keyup', function(event) {
-      if (event.key === 'Enter') {
-        document.getElementById('reply_btn').click();
-      }
-    });
+          document.getElementById("chatSection").style.display = "block";
 
+          // Start WebSocket connection after loading history
+          socket = io();
+          socket.on('connect', () => {
+            socket.emit('join', tenantId);
+          });
 
-    document.getElementById('reply_btn').onclick = () => {
-      const reply = document.getElementById('reply_input').value.trim();
-      if (!reply) return alert("Cannot send empty message");
-      if (!lastTenantId) return alert("No client to reply yet.");
-      socket.emit('reply_message', { tenantId: lastTenantId, message: reply });
+          socket.on('new_message', (data) => {
+            if (data.tenantId === tenantId) {
+              const msgDiv = document.createElement('div');
+              msgDiv.innerHTML = `<p><strong>Client:</strong> ${data.message}</p>`;
+              document.getElementById('messages').appendChild(msgDiv);
+            }
+          });
 
-      const replyBlock = document.createElement('div');
-      replyBlock.innerHTML = `<p><strong>You:</strong> ${reply}</p>`;
-      document.getElementById('messages').appendChild(replyBlock);
-      document.getElementById('reply_input').value = '';
+          document.getElementById('reply_btn').onclick = () => {
+            const reply = document.getElementById('reply_input').value.trim();
+            if (!reply) return;
+            socket.emit('reply_message', { tenantId, message: reply });
+
+            const replyDiv = document.createElement('div');
+            replyDiv.innerHTML = `<p><strong>You:</strong> ${reply}</p>`;
+            document.getElementById('messages').appendChild(replyDiv);
+            document.getElementById('reply_input').value = '';
+          };
+
+          document.getElementById('reply_input').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+              document.getElementById('reply_btn').click();
+            }
+          });
+        });
     }
   </script>
 </body>
