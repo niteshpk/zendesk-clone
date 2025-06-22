@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head><title>Agent Chat</title></head>
+<body>
+  <h2>Agent Chat Interface</h2>
+
+  <div id="messages" style="border: 1px solid black; height: 300px; overflow-y: auto;"></div>
+  <input id="reply_input" placeholder="Type reply..." />
+  <button id="reply_btn">Send Reply</button>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    let tenantId = getCookie('tenantId');
+    let agentUsername = getCookie('agentUsername');
+    if (!tenantId || !agentUsername) {
+      alert("Session expired. Please login again.");
+      window.location.href = '/agent-login';
+    }
+
+    fetch(`/chat-history/${tenantId}`)
+      .then(res => res.json())
+      .then(history => {
+        history.forEach(entry => {
+          const div = document.createElement('div');
+          if (entry.type === 'client_message') {
+            div.innerHTML = `<p><strong>Client:</strong> ${entry.message}</p>`;
+          } else {
+            div.innerHTML = `<p><strong>Agent (${entry.agentUsername}):</strong> ${entry.message}</p>`;
+          }
+          document.getElementById("messages").appendChild(div);
+        });
+
+        const socket = io();
+        socket.emit("join", tenantId);
+
+        socket.on('new_message', (data) => {
+          if (data.tenantId === tenantId) {
+            const div = document.createElement('div');
+            div.innerHTML = `<p><strong>Client:</strong> ${data.message}</p>`;
+            document.getElementById("messages").appendChild(div);
+          }
+        });
+
+        socket.on('agent_reply', (data) => {
+          if (data.tenantId === tenantId) {
+            const div = document.createElement('div');
+            div.innerHTML = `<p><strong>Agent (${data.agentUsername}):</strong> ${data.message}</p>`;
+            document.getElementById("messages").appendChild(div);
+          }
+        });
+
+        document.getElementById("reply_btn").onclick = () => {
+          const reply = document.getElementById("reply_input").value.trim();
+          if (!reply) return;
+          socket.emit('reply_message', { tenantId, message: reply, agentUsername });
+          document.getElementById("reply_input").value = '';
+        };
+
+        document.getElementById("reply_input").addEventListener("keyup", function (event) {
+          if (event.key === "Enter") {
+            document.getElementById("reply_btn").click();
+          }
+        });
+
+      });
+  </script>
+</body>
+</html>
