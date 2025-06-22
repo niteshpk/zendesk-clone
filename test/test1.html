@@ -1,22 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <script src="http://localhost:3000/js/widget.js" data-tenant-id="tenant_2"></script>
-
+  <meta charset="UTF-8">
+  <title>My Client Site</title>
 </head>
-
 <body>
-    <p>Hi tenant_1750568963151 example client site</p>
 
-    <!-- Navigation -->
-    <nav>
-        <a href="#" onclick="location.reload();" id="refreshLink">Refresh Site</a>
-    </nav>
+  <h2>Welcome to My Client Site!</h2>
+  <p>This page has the embedded SaaS Chat Widget.</p>
+
+  <!-- SaaS embed code -->
+<script>
+(function(w, d, s, u) {
+  var params = new URLSearchParams(window.location.search);
+  var tid = params.get('t_id');
+  if (!tid) { console.error("No tenant id found in URL"); return; }
+
+  var js = d.createElement(s);
+  js.src = u;
+  js.setAttribute('data-tenant-id', tid);
+  js.id = 'chat-widget';
+  js.async = true;
+  d.body.appendChild(js);
+})(window, document, 'script', 'http://localhost:3000/js/widget.js');
+</script>
+
+  </script>
 
 </body>
-
 </html>
