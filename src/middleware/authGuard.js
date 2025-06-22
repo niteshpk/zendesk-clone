@@ -1,4 +1,4 @@
-// /server/middleware/authGuard.js
+// /src/middleware/authGuard.js
 
 function tenantAuthGuard(req, res, next) {
   const tenantId = req.cookies.tenantId;

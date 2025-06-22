@@ -1,140 +1,116 @@
 <!-- views/tenant-dashboard.ejs -->
 
-<div class="container w-75 mt-4">
+<h1>Tenant Dashboard</h1>
 
-  <h1 class="mb-4">Tenant Dashboard</h1>
- 
-  <div class="mb-3">
-    <button id="refreshBtn" class="btn btn-outline-dark" onclick="window.location.reload()">Refresh</button>
-    <button id="logoutBtn" class="btn btn-danger">Logout</button>
-  </div>
+<%- include('partials/tenant/tenantInfo') %>
+<%- include('partials/tenant/widgetConfig') %>
+<%- include('partials/tenant/agentTable') %>
+<%- include('partials/tenant/agentModal') %>
 
-  <!-- Tenant Info -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Tenant Info</h5>
-      <p><strong>Business Name:</strong> <span id="businessName"></span></p>
-      <p><strong>Email:</strong> <span id="email"></span></p>
-      <p><strong>Tenant ID:</strong> <span id="tenantId"></span></p>
-    </div>
-  </div>
-
-  <!-- Widget Config -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Widget Config</h5>
-      <form method="POST" action="/create-widget">
-        <div class="mb-3">
-          <label>Widget Title:</label>
-          <input type="text" name="widgetTitle" class="form-control"/>
-        </div>
-        <div class="mb-3">
-          <label>Welcome Text:</label>
-          <input type="text" name="welcomeText" class="form-control"/>
-        </div>
-        <div class="mb-3">
-          <label>Logo URL:</label>
-          <input type="text" name="logoUrl" class="form-control"/>
-        </div>
-        <div class="mb-3">
-          <label>Widget Color (Hex):</label>
-          <input type="text" name="color" class="form-control"/>
-        </div>
-        <input type="hidden" id="tenantIdInput" name="tenantId" value="" />
-        <button type="submit" class="btn btn-primary">Save Widget</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Agent List -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Existing Agents</h5>
-      <table class="table table-bordered">
-        <thead>
-          <tr><th>Agent ID</th><th>Username</th><th>Password</th></tr>
-        </thead>
-        <tbody id="agentTableBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Add Agent -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Add New Agent</h5>
-      <form method="POST" action="/create-agent">
-        <div class="mb-3">
-          <label>Agent Name:</label>
-          <input type="text" name="agentName" class="form-control" required />
-        </div>
-        <div class="mb-3">
-          <label>Agent Password:</label>
-          <input type="password" name="agentPassword" class="form-control" autocomplete="current-password" required />
-        </div>
-        <input type="hidden" id="tenantIdInput2" name="tenantId" value="" />
-        <button type="submit" class="btn btn-success">Create Agent</button>
-      </form>
-    </div>
-  </div>
-
-</div>
-
-<script src="/js/utils.js"></script>
 
 <script>
-  window.onload = async function () {
-    const tenantId = utils.getCookie('tenantId');
-    if (!tenantId) {
-      alert("Session expired. Please login again.");
-      window.location.href = '/tenant-login';
-      return;
-    }
+  const tenantId = "<%= tenant.id %>";
+  const agentModal = new bootstrap.Modal(document.getElementById('agentModal'));
 
-    document.getElementById("tenantIdInput").value = tenantId;
-    document.getElementById("tenantIdInput2").value = tenantId;
-
-    // Load tenant info
-    fetch(`/tenant-info/${tenantId}`)
-      .then(res => res.json())
-      .then(tenant => {
-        document.getElementById("businessName").innerText = tenant.businessName;
-        document.getElementById("email").innerText = tenant.email;
-        document.getElementById("tenantId").innerText = tenant.tenantId;
-      });
-
-    // Load widget config
+  // Load tenant widget config
+  function loadWidgetConfig() {
     fetch(`/widget-config/${tenantId}`)
       .then(res => res.json())
-      .then(config => {
-        document.querySelector('[name="widgetTitle"]').value = config.widgetTitle || "";
-        document.querySelector('[name="welcomeText"]').value = config.welcomeText || "";
-        document.querySelector('[name="logoUrl"]').value = config.logoUrl || "";
-        document.querySelector('[name="color"]').value = config.color || "#000000";
+      .then(widget => {
+        document.getElementById("widgetTitle").value = widget.widgetTitle || "";
+        document.getElementById("welcomeText").value = widget.welcomeText || "";
+        document.getElementById("logoUrl").value = widget.logoUrl || "";
+        document.getElementById("color").value = widget.color || "#000000";
       });
+  }
 
-    // Load agents
+  document.getElementById("widgetForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = {
+      tenantId,
+      widgetTitle: document.getElementById("widgetTitle").value,
+      welcomeText: document.getElementById("welcomeText").value,
+      logoUrl: document.getElementById("logoUrl").value,
+      color: document.getElementById("color").value,
+    };
+
+    await fetch("/save-widget", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    alert("Widget configuration saved.");
+  });
+  
+  function loadAgents() {
     fetch(`/agent-list/${tenantId}`)
       .then(res => res.json())
       .then(agentList => {
         const tbody = document.getElementById("agentTableBody");
-        agentList.forEach(agent => {
-          const row = document.createElement('tr');
-          row.innerHTML = `<td>${agent.agentId}</td><td>${agent.username}</td><td>${agent.plainPassword}</td>`;
+        tbody.innerHTML = "";
+        agentList.forEach((agent, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${agent.username}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="openEditAgent('${agent.agentId}', '${agent.username}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteAgent('${agent.agentId}')">Delete</button>
+            </td>`;
           tbody.appendChild(row);
         });
       });
-
-    document.getElementById('logoutBtn').onclick = () => {
-      utils.deleteCookie('tenantId');
-      window.location.href = '/tenant-login';
-    };
-
-    // Optional: handle browser back button protection
-    window.addEventListener("pageshow", () => {
-      if (!utils.getCookie('tenantId')) {
-        window.location.href = '/tenant-login';
-      }
-    });
   }
+
+  function openAddAgentModal() {
+    document.getElementById('agentForm').reset();
+    document.getElementById('agentId').value = "";
+    agentModal.show();
+  }
+
+  function openEditAgent(agentId, username) {
+    document.getElementById('agentForm').reset();
+    document.getElementById('agentId').value = agentId;
+    document.getElementById('agentName').value = username;
+    // Don't prefill password for security
+    agentModal.show();
+  }
+
+  document.getElementById('agentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const agentId = document.getElementById('agentId').value;
+    const agentName = document.getElementById('agentName').value;
+    const agentPassword = document.getElementById('agentPassword').value;
+
+    const payload = { agentId, agentName, agentPassword, tenantId };
+
+    await fetch('/save-agent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    agentModal.hide();
+    loadAgents();
+  });
+
+  function deleteAgent(agentId) {
+    if (confirm("Are you sure to delete this agent?")) {
+      fetch(`/delete-agent/${tenantId}/${agentId}`, { method: 'DELETE' })
+        .then(() => loadAgents());
+    }
+  }
+
+  window.onload = async () => {
+    const widgetRes = await fetch(`/widget-config/${tenantId}`);
+    const widget = await widgetRes.json();
+
+    document.getElementById("widgetTitle").value = widget.widgetTitle || "";
+    document.getElementById("welcomeText").value = widget.welcomeText || "";
+    document.getElementById("logoUrl").value = widget.logoUrl || "";
+    document.getElementById("color").value = widget.color || "#000000";
+
+    loadAgents();
+  };
 </script>

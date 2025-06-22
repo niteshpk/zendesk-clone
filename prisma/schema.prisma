@@ -10,66 +10,47 @@ datasource db {
 }
 
 model Tenant {
-  id           String   @id @default(uuid())
+  id           String   @id @default(cuid())
   businessName String
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  agents        Agent[]
-  widgetConfigs WidgetConfig?
-  conversations Conversation[]
+  agents  Agent[]
+  widgets Widget[]
+  messages Message[]
 }
 
 model Agent {
-  id           String   @id @default(uuid())
-  username     String
+  id         String   @id @default(cuid())
+  username   String
   passwordHash String
-  createdAt    DateTime @default(now())
-
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
-
-  messages Message[]
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
-model WidgetConfig {
-  id          String   @id @default(uuid())
+model Widget {
+  id          String   @id @default(cuid())
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  color       String
   widgetTitle String
   welcomeText String
   logoUrl     String
-  color       String
   createdAt   DateTime @default(now())
-
-  tenantId String @unique
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
-}
-
-model Conversation {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  closedAt  DateTime?
-
-  tenantId String
-  tenant   Tenant @relation(fields: [tenantId], references: [id])
-
-  messages Message[]
+  updatedAt   DateTime @updatedAt
 }
 
 model Message {
-  id          String   @id @default(uuid())
-  senderType  SenderType
-  content     String
-  sentAt      DateTime @default(now())
-
-  conversationId String
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-
-  agentId String? // nullable if client message
-  agent   Agent?  @relation(fields: [agentId], references: [id])
-}
-
-enum SenderType {
-  client
-  agent
+  id           String   @id @default(cuid())
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId     String
+  sender       String   // 'client' or 'agent'
+  agentUsername String?  // only for agent messages
+  content      String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }

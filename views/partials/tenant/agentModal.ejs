@@ -1,0 +1,26 @@
+<div class="modal fade" id="agentModal" tabindex="-1" aria-labelledby="agentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="agentForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="agentModalLabel">Add/Edit Agent</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="agentId" name="agentId">
+          <div class="mb-3">
+            <label>Username</label>
+            <input type="text" class="form-control" id="agentName" name="agentName" required>
+          </div>
+          <div class="mb-3">
+            <label>Password</label>
+            <input type="password" class="form-control" id="agentPassword" name="agentPassword" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Agent</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

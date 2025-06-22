@@ -10,6 +10,9 @@ const expressLayouts = require("express-ejs-layouts");
 const cors = require("cors");
 const path = require("path");
 
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
+
 // Route imports
 const tenantRoutes = require("./routes/tenantRoutes");
 const agentRoutes = require("./routes/agentRoutes");
@@ -23,6 +26,7 @@ const { tenantAuthGuard, agentAuthGuard } = require("./middleware/authGuard");
 app.use(cors());
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json()); // Add JSON parser also
 app.use(express.static("public"));
 
 app.use(expressLayouts);
@@ -35,10 +39,9 @@ app.use((req, res, next) => {
   res.locals.tenantId = req.cookies.tenantId || null;
   res.locals.agentUsername = req.cookies.agentUsername || null;
   res.locals.path = req.path;
-  res.locals.layout = "layout"; // Set default layout
+  res.locals.layout = "layout";
   next();
 });
-
 
 // API Routes
 app.use(tenantRoutes);
@@ -46,49 +49,60 @@ app.use(agentRoutes);
 app.use(widgetRoutes);
 app.use(chatRoutes);
 
-// Serve frontend HTML pages (Static routes)
+// Serve frontend pages
 
 app.get("/tenant-signup", (req, res) => {
-  res.render("tenant-signup", {
-    title: "Tenant Signup",
-  });
+  res.render("tenant-signup", { title: "Tenant Signup" });
 });
 
 app.get("/tenant-login", (req, res) => {
-  res.render("tenant-login", {
-    title: "Tenant Login",
-  });
+  res.render("tenant-login", { title: "Tenant Login" });
 });
 
-app.get("/tenant-dashboard.html", tenantAuthGuard, (req, res) => {
+// 🔥 Main fix here — load tenant + widget data before rendering dashboard
+app.get("/tenant-dashboard.html", tenantAuthGuard, async (req, res) => {
+  const tenantId = req.cookies.tenantId;
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  const widget = await prisma.widget.findFirst({
+    where: { tenantId },
+  });
+
   res.render("tenant-dashboard", {
     title: "Tenant Dashboard",
+    tenant,
+    widget,
+    tenantId,
+    path: req.path,
   });
 });
 
+// Agent side pages
 app.get("/agent-login", (req, res) => {
-  res.render("agent-login", {
-    title: "Agent Login",
-  });
+  res.render("agent-login", { title: "Agent Login" });
 });
 
 app.get("/agent.html", agentAuthGuard, (req, res) => {
   res.render("agent", {
     title: "Agent Chat",
+    tenantId: req.cookies.tenantId,
+    agentUsername: req.cookies.agentUsername,
   });
 });
 
+// Default index
 app.get("/", (req, res) => {
-  res.render("index", {
-    title: "Agent Chat",
-  });
+  res.render("index", { title: "SaaS Chat" });
 });
 
-// Initialize WebSocket chat handling
+// Initialize WebSocket chat
 chatController.initWebSocket(io);
 
 // Start server
 const PORT = 3000;
-http.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`)
-);
+http.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
+});

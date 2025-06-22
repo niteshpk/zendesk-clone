@@ -233,14 +233,14 @@
           .then((res) => res.json())
           .then((history) => {
             history.forEach((entry) => {
-              if (entry.type === "client_message") {
-                appendMessage(messagesDiv, "client", "", entry.message);
-              } else if (entry.type === "agent_reply") {
+              if (entry.sender === "client") {
+                appendMessage(messagesDiv, "client", "", entry.content);
+              } else if (entry.sender === "agent") {
                 appendMessage(
                   messagesDiv,
                   "agent",
                   entry.agentUsername,
-                  entry.message
+                  entry.content
                 );
               }
             });
@@ -255,10 +255,10 @@
 
           shadowRoot.getElementById("send_btn").onclick = () => {
             const input = shadowRoot.getElementById("chat_input");
-            const message = input.value.trim();
-            if (!message) return;
-            socket.emit("send_message", { tenantId, message });
-            appendMessage(messagesDiv, "client", "", message);
+            const content = input.value.trim();
+            if (!content) return;
+            socket.emit("send_message", { tenantId, content });
+            appendMessage(messagesDiv, "client", "", content);
             input.value = "";
           };
 
@@ -276,7 +276,7 @@
                 messagesDiv,
                 "agent",
                 data.agentUsername,
-                data.message
+                data.content
               );
             }
           });
