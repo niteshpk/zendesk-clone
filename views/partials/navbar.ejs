@@ -1,0 +1,58 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">SaaS Chat</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+      aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+        <% if (!tenantId && !agentUsername) { %>
+          <!-- Guest -->
+          <li class="nav-item">
+            <a class="nav-link <%= (path === '/tenant-login') ? 'active' : '' %>" href="/tenant-login">Tenant Login</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= (path === '/tenant-signup') ? 'active' : '' %>" href="/tenant-signup">Tenant Signup</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link <%= (path === '/agent-login') ? 'active' : '' %>" href="/agent-login">Agent Login</a>
+          </li>
+
+        <% } else if (tenantId) { %>
+          <!-- Tenant -->
+          <li class="nav-item">
+            <a class="nav-link <%= (path === '/tenant-dashboard.html') ? 'active' : '' %>" href="/tenant-dashboard.html">Dashboard</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="logoutTenant()">Logout</a>
+          </li>
+
+        <% } else if (agentUsername) { %>
+          <!-- Agent -->
+          <li class="nav-item">
+            <a class="nav-link <%= (path === '/agent.html') ? 'active' : '' %>" href="/agent.html">Agent Chat</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" onclick="logoutAgent()">Logout</a>
+          </li>
+        <% } %>
+
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<script>
+  function logoutTenant() {
+    document.cookie = "tenantId=; Max-Age=0";
+    location.href = "/tenant-login";
+  }
+  function logoutAgent() {
+    document.cookie = "tenantId=; Max-Age=0";
+    document.cookie = "agentUsername=; Max-Age=0";
+    location.href = "/agent-login";
+  }
+</script>
