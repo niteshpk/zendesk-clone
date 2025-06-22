@@ -290,3 +290,51 @@ Changes apply instantly to your live widget integration.
 | `/public/css/widget.css`      | Widget scoped styles (isolated) |
 
 ---
+
+Docker db container setup:
+
+```bash
+docker run --name saas-postgres \
+  -e POSTGRES_USER=saas_admin \
+  -e POSTGRES_PASSWORD=saas_password \
+  -e POSTGRES_DB=saas_chat \
+  -p 5432:5432 \
+  -d postgres:15
+```
+| Param                                | Meaning                            |
+| ------------------------------------ | ---------------------------------- |
+| `--name saas-postgres`               | Container name                     |
+| `-e POSTGRES_USER=saas_admin`        | DB username                        |
+| `-e POSTGRES_PASSWORD=saas_password` | DB password                        |
+| `-e POSTGRES_DB=saas_chat`           | DB name                            |
+| `-p 5432:5432`                       | Expose local port 5432             |
+| `-d postgres:15`                     | Use latest stable postgres version |
+
+
+
+```bash
+psql -h localhost -p 5432 -U saas_admin -d saas_chat
+```
+
+PG admin setup:
+
+```
+docker run --name saas-pgadmin \
+  -p 8081:80 \
+  -e PGADMIN_DEFAULT_EMAIL=admin@example.com \
+  -e PGADMIN_DEFAULT_PASSWORD=admin123 \
+  -d dpage/pgadmin4
+```
+
+Build docker image:
+
+```bash
+docker compose up --build
+```
+
+You can fully wipe all previous containers & volumes (careful: destroys all data):
+
+docker compose down -v
+
+
+Generate full Prisma SaaS backend starter code. give me the changes step by step and file by file. 

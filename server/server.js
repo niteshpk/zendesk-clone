@@ -56,6 +56,10 @@ app.get("/agent.html", agentAuthGuard, (req, res) => {
   res.render('agent', { title: 'Agent Chat', layout: 'layout' });
 });
 
+app.get("/", agentAuthGuard, (req, res) => {
+  res.render('index', { title: 'Agent Chat', layout: 'layout' });
+});
+
 // Initialize WebSocket chat handling
 chatController.initWebSocket(io);
 

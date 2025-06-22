@@ -1,0 +1,75 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id           String   @id @default(uuid())
+  businessName String
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  agents        Agent[]
+  widgetConfigs WidgetConfig?
+  conversations Conversation[]
+}
+
+model Agent {
+  id           String   @id @default(uuid())
+  username     String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  messages Message[]
+}
+
+model WidgetConfig {
+  id          String   @id @default(uuid())
+  widgetTitle String
+  welcomeText String
+  logoUrl     String
+  color       String
+  createdAt   DateTime @default(now())
+
+  tenantId String @unique
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  closedAt  DateTime?
+
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+
+  messages Message[]
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  senderType  SenderType
+  content     String
+  sentAt      DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+
+  agentId String? // nullable if client message
+  agent   Agent?  @relation(fields: [agentId], references: [id])
+}
+
+enum SenderType {
+  client
+  agent
+}

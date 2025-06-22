@@ -4,7 +4,8 @@
   "main": "server/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "server-start": "nodemon server.js",
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js",
     "client-start": "cd test && http-server ."
   },
   "keywords": [],
@@ -12,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^6.10.1",
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.0",
     "cookie-parser": "^1.4.7",
@@ -23,6 +25,7 @@
   },
   "devDependencies": {
     "http-server": "^14.1.1",
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "prisma": "^6.10.1"
   }
 }
