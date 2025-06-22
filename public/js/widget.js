@@ -1,4 +1,3 @@
-// /public/js/widget.js
 (function () {
   function getTenantId() {
     const scripts = document.getElementsByTagName("script");
@@ -10,34 +9,207 @@
     return null;
   }
 
-  function updateAgentStatus(tenantId) {
-    fetch(`http://localhost:3000/online-agents/${tenantId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        document.getElementById("agentStatus").innerHTML = `<p><strong>Agents Online:</strong> ${data.onlineAgents}</p>`;
-      });
-  }
-
-  function appendMessage(type, senderName, message) {
-    const div = document.createElement('div');
-    div.classList.add('d-flex', 'mb-2');
-    if (type === 'client') {
-      div.classList.add('justify-content-start');
-      div.innerHTML = `
-        <div class="bg-light border rounded p-2">
-          <strong>Client:</strong> ${message}
-        </div>`;
-    } else {
-      div.classList.add('justify-content-end');
-      div.innerHTML = `
-        <div class="bg-primary text-white rounded p-2">
-          <strong>Agent (${senderName}):</strong> ${message}
-        </div>`;
+  function createWidgetUI(shadowRoot, config, tenantId) {
+    // Add scoped styles
+    const style = document.createElement("style");
+    style.textContent = `
+    .widget-container {
+      font-family: Arial, sans-serif;
+      border: 2px solid ${config.color || "#000"};
+      padding: 10px;
+      width: 300px;
+      background: white;
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      border-radius: 8px;
+      z-index: 9999;
     }
-    document.getElementById("messages").appendChild(div);
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+    .header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .header img {
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+    .agent-status {
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    .messages {
+      border: 1px solid #ddd;
+      height: 200px;
+      overflow-y: auto;
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+    .client {
+      background: #f1f1f1;
+      padding: 5px 10px;
+      border-radius: 10px;
+      margin-bottom: 5px;
+      max-width: 80%;
+      align-self: flex-start;
+    }
+    .agent {
+      background: ${config.color || "#007bff"};
+      color: white;
+      padding: 5px 10px;
+      border-radius: 10px;
+      margin-bottom: 5px;
+      max-width: 80%;
+      align-self: flex-end;
+    }
+    .input-container {
+      display: flex;
+      gap: 5px;
+    }
+    .floating-bubble {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: ${config.color || "#007bff"};
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 9999;
+    }
+
+    .input-container {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.input-container input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  outline: none;
+  font-size: 14px;
+}
+
+.input-container input:focus {
+  border-color: ${config.color || "#007bff"};
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+.input-container button {
+  background-color: ${config.color || "#007bff"};
+  border: none;
+  border-radius: 50%;
+  color: white;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.input-container button:hover {
+  background-color: #0056b3;
+}
+  `;
+    shadowRoot.appendChild(style);
+
+    // Create floating bubble
+    const floatingBubble = document.createElement("div");
+    floatingBubble.className = "floating-bubble";
+    floatingBubble.innerHTML = "&#128172;"; // 💬 bubble icon
+    shadowRoot.appendChild(floatingBubble);
+
+    // Create full widget
+    const container = document.createElement("div");
+    container.className = "widget-container";
+    container.style.display = "none"; // initially hidden
+
+    container.innerHTML = `
+    <div class="header">
+      ${
+        config.logoUrl
+          ? `<img src="${config.logoUrl}" width="50" height="50" />`
+          : ""
+      }
+      <h3 style="margin:0; color:${config.color || "#000"}">${config.widgetTitle}</h3>
+    </div>
+    <div>${config.welcomeText}</div>
+    <div id="agentStatus" class="agent-status">Agents Online: Loading...</div>
+    <div id="messages" class="messages"></div>
+    <div class="input-container">
+  <input id="chat_input" type="text" placeholder="Type a message..." />
+  <button id="send_btn">&#10148;</button>
+</div>
+  `;
+    shadowRoot.appendChild(container);
+
+    // Toggle logic
+    floatingBubble.onclick = () => {
+      floatingBubble.style.display = "none";
+      container.style.display = "block";
+    };
+
+    // Add close button inside widget
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "X";
+    closeBtn.style.position = "absolute";
+    closeBtn.style.top = "5px";
+    closeBtn.style.right = "5px";
+    closeBtn.style.border = "none";
+    closeBtn.style.background = "transparent";
+    closeBtn.style.fontSize = "16px";
+    closeBtn.style.cursor = "pointer";
+    container.appendChild(closeBtn);
+
+    closeBtn.onclick = () => {
+      container.style.display = "none";
+      floatingBubble.style.display = "flex";
+    };
+
+    return shadowRoot.getElementById("messages");
   }
 
+  function appendMessage(messagesDiv, type, senderName, message) {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.marginBottom = "5px";
+    wrapper.style.justifyContent =
+      type === "client" ? "flex-end" : "flex-start";
+
+    const bubble = document.createElement("div");
+    bubble.style.padding = "8px 12px";
+    bubble.style.borderRadius = "15px";
+    bubble.style.maxWidth = "75%";
+    bubble.style.wordWrap = "break-word";
+    bubble.style.boxShadow = "0 1px 2px rgba(0,0,0,0.2)";
+
+    if (type === "client") {
+      // Your own message
+      bubble.style.backgroundColor = "#007bff";
+      bubble.style.color = "#fff";
+      bubble.textContent = message;
+    } else {
+      // Agent reply
+      bubble.style.backgroundColor = "#f1f1f1";
+      bubble.style.color = "#000";
+      bubble.textContent = `${senderName}: ${message}`;
+    }
+
+    wrapper.appendChild(bubble);
+    messagesDiv.appendChild(wrapper);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
 
   window.addEventListener("load", () => {
     const tenantId = getTenantId();
@@ -46,85 +218,83 @@
       return;
     }
 
-    const tenantInfo = document.createElement("p");
-    tenantInfo.innerHTML = `<strong>Connected to Tenant ID:</strong> ${tenantId}`;
-    document.body.insertBefore(tenantInfo, document.body.firstChild);
+    // Create Shadow DOM
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const shadowRoot = container.attachShadow({ mode: "open" });
 
     fetch(`http://localhost:3000/widget-config/${tenantId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Widget config not found");
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((config) => {
-        const chatDiv = document.createElement("div");
-        chatDiv.style.border = `2px solid ${config.color || "#000000"}`;
-        chatDiv.style.padding = "10px";
-        chatDiv.style.margin = "10px";
+        const messagesDiv = createWidgetUI(shadowRoot, config, tenantId);
 
-        chatDiv.innerHTML = `
-          <div style="display: flex; align-items: center; margin-bottom:10px;">
-            ${config.logoUrl ? `<img src="${config.logoUrl}" width="50" height="50" style="margin-right:10px"/>` : ""}
-            <h3 style="color:${config.color}; margin:0;">${config.widgetTitle}</h3>
-          </div>
-          <p>${config.welcomeText}</p>
-          <div id="agentStatus"><p>Agents Online: Loading...</p></div>
-          <div id="messages" style="margin-top: 10px;"></div>
-          <input id="chat_input" placeholder="Type message..." style="margin-top:10px;width:70%;" />
-          <button id="send_btn">Send</button>
-        `;
-        document.body.appendChild(chatDiv);
-
-        // Load chat history after DOM created
+        // Load chat history
         fetch(`http://localhost:3000/chat-history/${tenantId}`)
-          .then(res => res.json())
-          .then(history => {
-            history.forEach(entry => {
+          .then((res) => res.json())
+          .then((history) => {
+            history.forEach((entry) => {
               if (entry.type === "client_message") {
-                appendMessage('client', '', entry.message);
+                appendMessage(messagesDiv, "client", "", entry.message);
               } else if (entry.type === "agent_reply") {
-                appendMessage('agent', entry.agentUsername, entry.message);
+                appendMessage(
+                  messagesDiv,
+                  "agent",
+                  entry.agentUsername,
+                  entry.message
+                );
               }
             });
           });
 
-        // Load socket.io after DOM created
+        // Load socket.io dynamically inside shadow
         const socketScript = document.createElement("script");
         socketScript.src = "http://localhost:3000/socket.io/socket.io.js";
         socketScript.onload = () => {
           const socket = io("http://localhost:3000");
           socket.emit("join", tenantId);
 
-          document.getElementById("send_btn").onclick = () => {
-            const message = document.getElementById("chat_input").value.trim();
+          shadowRoot.getElementById("send_btn").onclick = () => {
+            const input = shadowRoot.getElementById("chat_input");
+            const message = input.value.trim();
             if (!message) return;
             socket.emit("send_message", { tenantId, message });
-
-            const msgDiv = document.createElement("div");
-            msgDiv.innerHTML = `<p><strong>You:</strong> ${message}</p>`;
-            document.getElementById("messages").appendChild(msgDiv);
-            document.getElementById("chat_input").value = "";
+            appendMessage(messagesDiv, "client", "", message);
+            input.value = "";
           };
 
-          document.getElementById("chat_input").addEventListener("keyup", function (event) {
-            if (event.key === "Enter") {
-              document.getElementById("send_btn").click();
-            }
-          });
+          shadowRoot
+            .getElementById("chat_input")
+            .addEventListener("keyup", function (event) {
+              if (event.key === "Enter") {
+                shadowRoot.getElementById("send_btn").click();
+              }
+            });
 
           socket.on("agent_reply", (data) => {
             if (data.tenantId === tenantId) {
-              appendMessage('agent', data.agentUsername, data.message);
+              appendMessage(
+                messagesDiv,
+                "agent",
+                data.agentUsername,
+                data.message
+              );
             }
           });
         };
-        document.body.appendChild(socketScript);
+        shadowRoot.appendChild(socketScript);
 
-        // Start agent status updater after DOM is fully ready
-        updateAgentStatus(tenantId);
-        setInterval(() => updateAgentStatus(tenantId), 60000);
-      })
-      .catch((err) => {
-        console.error("Widget config fetch failed", err);
+        // Agent status updater
+        function updateAgentStatus() {
+          fetch(`http://localhost:3000/online-agents/${tenantId}`)
+            .then((res) => res.json())
+            .then((data) => {
+              shadowRoot.getElementById(
+                "agentStatus"
+              ).innerHTML = `Agents Online: ${data.onlineAgents}`;
+            });
+        }
+        updateAgentStatus();
+        setInterval(updateAgentStatus, 60000);
       });
   });
 })();

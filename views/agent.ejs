@@ -24,57 +24,56 @@
 
 <script>
 
-   
 
-    let tenantId = utils.getCookie('tenantId');
-    let agentUsername = utils.getCookie('agentUsername');
-    
-    fetch(`/chat-history/${tenantId}`)
-      .then(res => res.json())
-      .then(history => {
-        history.forEach(entry => {
-          const div = document.createElement('div');
-          if (entry.type === 'client_message') {
-            div.innerHTML = `<p><strong>Client:</strong> ${entry.message}</p>`;
-          } else {
-            div.innerHTML = `<p><strong>Agent (${entry.agentUsername}):</strong> ${entry.message}</p>`;
-          }
-          document.getElementById("messages").appendChild(div);
-        });
 
-        const socket = io();
-        socket.emit("join", tenantId);
+  let tenantId = utils.getCookie('tenantId');
+  let agentUsername = utils.getCookie('agentUsername');
+  const messagesDiv = document.getElementById("messages");
 
-        socket.on('new_message', (data) => {
-          if (data.tenantId === tenantId) {
-            utils.appendMessage('client', '', data.message);
-          }
-        });
-
-        socket.on('agent_reply', (data) => {
-          if (data.tenantId === tenantId) {
-            utils.appendMessage('agent', data.agentUsername, data.message);
-          }
-        });
-
-        document.getElementById("reply_btn").onclick = () => {
-          const reply = document.getElementById("reply_input").value.trim();
-          if (!reply) return;
-          socket.emit('reply_message', { tenantId, message: reply, agentUsername });
-          document.getElementById("reply_input").value = '';
-        };
-
-        document.getElementById("reply_input").addEventListener("keyup", function (event) {
-          if (event.key === "Enter") {
-            document.getElementById("reply_btn").click();
-          }
-        });
+  fetch(`/chat-history/${tenantId}`)
+    .then(res => res.json())
+    .then(history => {
+      history.forEach(entry => {
+        if (entry.type === 'client_message') {
+          appendMessage(messagesDiv, 'client', '', entry.message);
+        } else {
+          appendMessage(messagesDiv, 'agent', entry.agentUsername, entry.message);
+        }
       });
+    });
 
-    // Logout logic
-    document.getElementById("logoutBtn").onclick = () => {
-      utils.deleteCookie('tenantId');
-      utils.deleteCookie('agentUsername');
-      window.location.href = '/agent-login';
-    };
+  const socket = io();
+  socket.emit("join", tenantId);
+
+  socket.on('new_message', (data) => {
+    if (data.tenantId === tenantId) {
+      utils.appendMessage(messagesDiv, 'client', '', data.message);
+    }
+  });
+
+  socket.on('agent_reply', (data) => {
+    if (data.tenantId === tenantId) {
+      utils.appendMessage(messagesDiv, 'agent', data.agentUsername, data.message);
+    }
+  });
+
+  document.getElementById("reply_btn").onclick = () => {
+    const reply = document.getElementById("reply_input").value.trim();
+    if (!reply) return;
+    socket.emit('reply_message', { tenantId, message: reply, agentUsername });
+    document.getElementById("reply_input").value = '';
+  };
+
+  document.getElementById("reply_input").addEventListener("keyup", function (event) {
+    if (event.key === "Enter") {
+      document.getElementById("reply_btn").click();
+    }
+  });
+
+  // Logout logic
+  document.getElementById("logoutBtn").onclick = () => {
+    utils.deleteCookie('tenantId');
+    utils.deleteCookie('agentUsername');
+    window.location.href = '/agent-login';
+  };
 </script>
