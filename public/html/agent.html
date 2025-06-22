@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html>
-<head><title>Agent Chat</title></head>
+
+<head>
+  <title>Agent Chat</title>
+</head>
+
 <body>
   <h2>Agent Chat Interface</h2>
+  <button id="logoutBtn">Logout</button>
 
   <div id="messages" style="border: 1px solid black; height: 300px; overflow-y: auto;"></div>
   <input id="reply_input" placeholder="Type reply..." />
   <button id="reply_btn">Send Reply</button>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-    }
+  <script src="/js/utils.js"></script>
 
-    let tenantId = getCookie('tenantId');
-    let agentUsername = getCookie('agentUsername');
+  <script>
+    let tenantId = utils.getCookie('tenantId');
+    let agentUsername = utils.getCookie('agentUsername');
     if (!tenantId || !agentUsername) {
       alert("Session expired. Please login again.");
       window.location.href = '/agent-login';
@@ -71,4 +72,5 @@
       });
   </script>
 </body>
+
 </html>

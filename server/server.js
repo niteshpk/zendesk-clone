@@ -13,6 +13,9 @@ const agentRoutes = require('./routes/agentRoutes');
 const widgetRoutes = require('./routes/widgetRoutes');
 const chatRoutes = require('./routes/chatRoutes');
 const chatController = require('./controllers/chatController');
+
+const { tenantAuthGuard, agentAuthGuard } = require('./middleware/authGuard');
+
 // Middlewares
 app.use(cors());
 app.use(cookieParser());
@@ -25,6 +28,8 @@ app.use(agentRoutes);
 app.use(widgetRoutes);
 app.use(chatRoutes);
 
+let serverSessionToken = Date.now();
+
 // Serve frontend HTML pages (Static routes)
 
 app.get("/tenant-signup", (req, res) => {
@@ -35,9 +40,7 @@ app.get("/tenant-login", (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'html', 'tenant-login.html'));
 });
 
-app.get("/tenant-dashboard.html", (req, res) => {
-  const tenantId = req.cookies.tenantId;
-  if (!tenantId) return res.redirect('/tenant-login');
+app.get("/tenant-dashboard.html", tenantAuthGuard, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'html', 'tenant-dashboard.html'));
 });
 
@@ -45,9 +48,7 @@ app.get("/agent-login", (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'html', 'agent-login.html'));
 });
 
-app.get("/agent.html", (req, res) => {
-  const tenantId = req.cookies.tenantId;
-  if (!tenantId) return res.redirect('/agent-login');
+app.get("/agent.html", agentAuthGuard, (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'html', 'agent.html'));
 });
 

@@ -4,6 +4,7 @@
 <head>
   <title>Tenant Dashboard</title>
   <meta http-equiv="Cache-Control" content="no-store" />
+  <script src="/js/utils.js"></script>
 </head>
 <body>
   <h1>Tenant Dashboard</h1>
@@ -36,24 +37,14 @@
   <h2>Add New Agent:</h2>
   <form method="POST" action="/create-agent">
     Agent Name: <input type="text" name="agentName" /><br/>
-    Agent Password: <input type="password" name="agentPassword" /><br/>
+    Agent Password: <input type="password" name="agentPassword" autocomplete="current-password"/><br/>
     <input type="hidden" id="tenantIdInput2" name="tenantId" value="" />
     <button type="submit">Create Agent</button>
   </form>
 
   <script>
-    function getCookie(name) {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-    }
-
-    function deleteCookie(name) {
-      document.cookie = name + '=; Max-Age=0; path=/';
-    }
-
-    window.onload = function () {
-      const tenantId = getCookie('tenantId');
+    window.onload = async function () {
+      const tenantId = utils.getCookie('tenantId');
       if (!tenantId) {
         alert("Session expired. Please login again.");
         window.location.href = '/tenant-login';
@@ -93,12 +84,12 @@
         });
 
       document.getElementById('logoutBtn').onclick = () => {
-        deleteCookie('tenantId');
+        utils.deleteCookie('tenantId');
         window.location.href = '/tenant-login';
       };
 
       window.addEventListener("pageshow", () => {
-        if (!getCookie('tenantId')) {
+        if (!utils.getCookie('tenantId')) {
           window.location.href = '/tenant-login';
         }
       });

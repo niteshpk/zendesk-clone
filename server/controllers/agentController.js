@@ -1,11 +1,11 @@
 // /server/controllers/agentController.js
-const bcrypt = require('bcryptjs');
+const { hashPassword, comparePassword } = require('../utils/passwordUtils');
 const { agents } = require('../models/dataStore');
 
 exports.createAgent = async (req, res) => {
   const { tenantId, agentName, agentPassword } = req.body;
   agents[tenantId] = agents[tenantId] || [];
-  const passwordHash = await bcrypt.hash(agentPassword, 10);
+  const passwordHash = await hashPassword(agentPassword);
   agents[tenantId].push({
     agentId: 'agent_' + Date.now(),
     username: agentName,
@@ -25,9 +25,9 @@ exports.loginAgent = async (req, res) => {
   const tenantAgents = agents[tenantId] || [];
   const agent = tenantAgents.find(a => a.username === username);
   if (!agent) return res.send('Invalid agent credentials');
-  const match = await bcrypt.compare(password, agent.passwordHash);
+  const match = await comparePassword(password, agent.passwordHash);
   if (!match) return res.send('Invalid agent credentials');
-  res.cookie('tenantId', tenantId);
-  res.cookie('agentUsername', username);
+  res.cookie('tenantId', tenantId, { sameSite: 'lax', path: '/' });
+  res.cookie('agentUsername', username, { sameSite: 'lax', path: '/' });
   res.redirect('/agent.html');
 };

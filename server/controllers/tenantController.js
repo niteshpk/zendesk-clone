@@ -1,11 +1,11 @@
 // /server/controllers/tenantController.js
-const bcrypt = require('bcryptjs');
+const { hashPassword, comparePassword } = require('../utils/passwordUtils');
 const { tenants, widgets } = require('../models/dataStore');
 
 exports.signupTenant = async (req, res) => {
   const { businessName, email, password } = req.body;
   const tenantId = 'tenant_' + Date.now();
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await hashPassword(password);
 
   tenants[tenantId] = {
     businessName,
@@ -30,9 +30,9 @@ exports.loginTenant = async (req, res) => {
   const { email, password } = req.body;
   const tenantEntry = Object.values(tenants).find(t => t.email === email);
   if (!tenantEntry) return res.send('Invalid credentials');
-  const match = await bcrypt.compare(password, tenantEntry.passwordHash);
+  const match = await comparePassword(password, tenantEntry.passwordHash);
   if (!match) return res.send('Invalid credentials');
-  res.cookie('tenantId', tenantEntry.tenantId);
+  res.cookie('tenantId', tenantId, { sameSite: 'lax', path: '/' });
   res.redirect('/tenant-dashboard.html');
 };
 
