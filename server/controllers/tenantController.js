@@ -30,9 +30,11 @@ exports.loginTenant = async (req, res) => {
   const { email, password } = req.body;
   const tenantEntry = Object.values(tenants).find(t => t.email === email);
   if (!tenantEntry) return res.send('Invalid credentials');
+
   const match = await comparePassword(password, tenantEntry.passwordHash);
   if (!match) return res.send('Invalid credentials');
-  res.cookie('tenantId', tenantId, { sameSite: 'lax', path: '/' });
+
+  res.cookie('tenantId', tenantEntry.tenantId, { sameSite: 'lax', path: '/' });
   res.redirect('/tenant-dashboard.html');
 };
 

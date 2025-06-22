@@ -4,6 +4,7 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, { cors: { origin: '*', methods: ['GET', 'POST'] } });
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const expressLayouts = require('express-ejs-layouts');
 const cors = require('cors');
 const path = require('path');
 
@@ -22,34 +23,37 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+app.use(expressLayouts);
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, '..', 'views'));
+app.set('layout', 'layout');
+
 // API Routes
 app.use(tenantRoutes);
 app.use(agentRoutes);
 app.use(widgetRoutes);
 app.use(chatRoutes);
 
-let serverSessionToken = Date.now();
-
 // Serve frontend HTML pages (Static routes)
 
 app.get("/tenant-signup", (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'html', 'tenant-signup.html'));
+  res.render('tenant-signup', { title: 'Tenant Signup', layout: 'layout' });
 });
 
 app.get("/tenant-login", (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'html', 'tenant-login.html'));
+  res.render('tenant-login', { title: 'Tenant Login', layout: 'layout' });
 });
 
 app.get("/tenant-dashboard.html", tenantAuthGuard, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'html', 'tenant-dashboard.html'));
+  res.render('tenant-dashboard', { title: 'Tenant Dashboard', layout: 'layout' });
 });
 
 app.get("/agent-login", (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'html', 'agent-login.html'));
+  res.render('agent-login', { title: 'Agent Login', layout: 'layout' });
 });
 
 app.get("/agent.html", agentAuthGuard, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'html', 'agent.html'));
+  res.render('agent', { title: 'Agent Chat', layout: 'layout' });
 });
 
 // Initialize WebSocket chat handling

@@ -1,29 +1,34 @@
-<!DOCTYPE html>
-<html>
+<!-- views/agent.ejs -->
 
-<head>
-  <title>Agent Chat</title>
-</head>
 
-<body>
-  <h2>Agent Chat Interface</h2>
-  <button id="logoutBtn">Logout</button>
+<div class="container w-75 mt-5">
 
-  <div id="messages" style="border: 1px solid black; height: 300px; overflow-y: auto;"></div>
-  <input id="reply_input" placeholder="Type reply..." />
-  <button id="reply_btn">Send Reply</button>
+  <h2 class="mb-4">Agent Chat Interface</h2>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/utils.js"></script>
+  <div class="mb-3">
+    <button id="refreshBtn" class="btn btn-outline-dark" onclick="window.location.reload()">Refresh</button>
+    <button id="logoutBtn" class="btn btn-danger">Logout</button>
+  </div>
 
-  <script>
+  <div id="messages" class="border rounded p-3 mb-3" style="height: 300px; overflow-y: auto;"></div>
+
+  <div class="input-group">
+    <input id="reply_input" type="text" class="form-control" placeholder="Type reply..." />
+    <button id="reply_btn" class="btn btn-primary">Send Reply</button>
+  </div>
+
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/utils.js"></script>
+
+<script>
+
+   
+
     let tenantId = utils.getCookie('tenantId');
     let agentUsername = utils.getCookie('agentUsername');
-    if (!tenantId || !agentUsername) {
-      alert("Session expired. Please login again.");
-      window.location.href = '/agent-login';
-    }
-
+    
     fetch(`/chat-history/${tenantId}`)
       .then(res => res.json())
       .then(history => {
@@ -42,17 +47,13 @@
 
         socket.on('new_message', (data) => {
           if (data.tenantId === tenantId) {
-            const div = document.createElement('div');
-            div.innerHTML = `<p><strong>Client:</strong> ${data.message}</p>`;
-            document.getElementById("messages").appendChild(div);
+            utils.appendMessage('client', '', data.message);
           }
         });
 
         socket.on('agent_reply', (data) => {
           if (data.tenantId === tenantId) {
-            const div = document.createElement('div');
-            div.innerHTML = `<p><strong>Agent (${data.agentUsername}):</strong> ${data.message}</p>`;
-            document.getElementById("messages").appendChild(div);
+            utils.appendMessage('agent', data.agentUsername, data.message);
           }
         });
 
@@ -68,9 +69,12 @@
             document.getElementById("reply_btn").click();
           }
         });
-
       });
-  </script>
-</body>
 
-</html>
+    // Logout logic
+    document.getElementById("logoutBtn").onclick = () => {
+      utils.deleteCookie('tenantId');
+      utils.deleteCookie('agentUsername');
+      window.location.href = '/agent-login';
+    };
+</script>

@@ -1,0 +1,25 @@
+<!-- views/agent-login.ejs -->
+
+
+<div class="container w-50 mt-5">
+  <h2 class="mb-4">Agent Login</h2>
+
+  <form method="POST" action="/agent-login">
+    <div class="mb-3">
+      <label>Tenant ID:</label>
+      <input type="text" name="tenantId" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+      <label>Username:</label>
+      <input type="text" name="username" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+      <label>Password:</label>
+      <input type="password" name="password" class="form-control" autocomplete="current-password" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+  </form>
+</div>
