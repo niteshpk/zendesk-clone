@@ -55,8 +55,8 @@
             <td>${index + 1}</td>
             <td>${agent.username}</td>
             <td>
-              <button class="btn btn-sm btn-primary" onclick="openEditAgent('${agent.agentId}', '${agent.username}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteAgent('${agent.agentId}')">Delete</button>
+              <button class="btn btn-sm btn-primary" onclick="openEditAgent('${agent.id}', '${agent.username}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteAgent('${agent.id}')">Delete</button>
             </td>`;
           tbody.appendChild(row);
         });
