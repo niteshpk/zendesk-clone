@@ -1,6 +1,4 @@
 <!-- views/agent.ejs -->
-
-
 <div class="container w-75 mt-5">
 
   <h2 class="mb-4">Agent Chat Interface</h2>
@@ -19,7 +17,6 @@
 
 </div>
 
-<script src="/socket.io/socket.io.js"></script>
 <script>
   let tenantId = "<%= tenantId %>";
   let agentUsername = "<%= agentUsername %>";
@@ -38,7 +35,7 @@
     });
 
   const socket = io();
-  socket.emit("join", tenantId);
+  socket.emit('agent_join', { tenantId, agentUsername });
 
   socket.on('new_message', (data) => {
     if (data.tenantId === tenantId) {

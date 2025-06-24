@@ -20,6 +20,8 @@ model Tenant {
   agents  Agent[]
   widgets Widget[]
   messages Message[]
+  onlineAgents OnlineAgent[] 
+  offlineMessages OfflineMessage[]
 }
 
 model Agent {
@@ -53,4 +55,20 @@ model Message {
   content      String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model OnlineAgent {
+  id            String   @id @default(cuid())
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId      String
+  agentUsername String
+  createdAt     DateTime @default(now())
+}
+
+model OfflineMessage {
+  id        String   @id @default(cuid())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId  String
+  content   String
+  createdAt DateTime @default(now())
 }

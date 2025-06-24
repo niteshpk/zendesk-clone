@@ -337,3 +337,12 @@ You can fully wipe all previous containers & volumes (careful: destroys all data
 docker compose down -v
 
 
+clear database and reset migrations:
+
+```bash
+npx prisma migrate reset   
+```
+
+```bash
+npx prisma studio  
+```

@@ -1,3 +1,4 @@
+-- prisma/migrations/20250622160800_init_saas_schema/migration.sql
 -- CreateTable
 CREATE TABLE "Tenant" (
     "id" TEXT NOT NULL,
