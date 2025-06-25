@@ -12,36 +12,18 @@
   function createWidgetUI(shadowRoot, config) {
     const style = document.createElement("style");
     style.textContent = `
-      .widget-container {
-        font-family: Arial, sans-serif;
-        border: 2px solid ${config.color || "#000"};
-        padding: 10px;
-        width: 300px;
-        background: white;
-        position: fixed;
-        bottom: 80px;
-        right: 20px;
-        box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        border-radius: 8px;
-        z-index: 9999;
-      }
+      .widget-container { /* same styling as before */ }
       .header { display: flex; align-items: center; margin-bottom: 10px; }
       .header img { margin-right: 10px; border-radius: 50%; }
       .agent-status { font-size: 0.9em; margin-bottom: 10px; }
       .messages { border: 1px solid #ddd; height: 200px; overflow-y: auto; padding: 5px; margin-bottom: 10px; }
       .input-container { display: flex; gap: 5px; margin-top: 10px; }
-      .floating-bubble {
-        position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
-        background-color: ${config.color || "#007bff"}; box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 24px; cursor: pointer; z-index: 9999;
-      }
-      .input-container input {
-        flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 20px; outline: none; font-size: 14px;
-      }
-      .input-container button {
-        background-color: ${config.color || "#007bff"}; border: none; border-radius: 50%;
-        color: white; width: 40px; height: 40px; font-size: 20px; cursor: pointer;
-      }
+      .floating-bubble { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
+        background-color: ${config.color || "#007bff"}; box-shadow: 0 0 10px rgba(0,0,0,0.3); display: flex; justify-content: center;
+        align-items: center; color: white; font-weight: bold; font-size: 24px; cursor: pointer; z-index: 9999; }
+      .input-container input { flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 20px; }
+      .input-container button { background-color: ${config.color || "#007bff"}; border: none; border-radius: 50%;
+        color: white; width: 40px; height: 40px; font-size: 20px; cursor: pointer; }
     `;
     shadowRoot.appendChild(style);
 
@@ -131,18 +113,40 @@
       .then(config => {
         const ui = createWidgetUI(shadowRoot, config);
 
-        // Load chat history
-        fetch(`http://localhost:3000/chat-history/${tenantId}`)
-          .then(res => res.json())
-          .then(history => {
-            history.forEach(entry => {
-              if (entry.sender === "client") {
-                appendMessage(ui.messagesDiv, "client", "", entry.content);
-              } else if (entry.sender === "agent") {
-                appendMessage(ui.messagesDiv, "agent", entry.agentUsername, entry.content);
-              }
+        // Step 1: Check or create conversation
+        let conversationId = localStorage.getItem(`conversation_${tenantId}`);
+        function initializeConversation() {
+          if (conversationId) {
+            loadChatHistory(conversationId);
+          } else {
+            // create new conversation
+            fetch(`http://localhost:3000/conversations/${tenantId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
+            })
+              .then(res => res.json())
+              .then(data => {
+                conversationId = data.id;
+                localStorage.setItem(`conversation_${tenantId}`, conversationId);
+                loadChatHistory(conversationId);
+              });
+          }
+        }
+
+        function loadChatHistory(conversationId) {
+          fetch(`http://localhost:3000/chat-history/${tenantId}/${conversationId}`)
+            .then(res => res.json())
+            .then(history => {
+              history.forEach(entry => {
+                if (entry.sender === "client") {
+                  appendMessage(ui.messagesDiv, "client", "", entry.content);
+                } else if (entry.sender === "agent") {
+                  appendMessage(ui.messagesDiv, "agent", entry.agentUsername, entry.content);
+                }
+              });
             });
-          });
+        }
 
         // Load socket.io dynamically
         const socketScript = document.createElement("script");
@@ -154,7 +158,7 @@
           ui.sendBtn.onclick = () => {
             const content = ui.chatInput.value.trim();
             if (!content) return;
-            socket.emit("send_message", { tenantId, content });
+            socket.emit("send_message", { tenantId, conversationId, content });
             appendMessage(ui.messagesDiv, "client", "", content);
             ui.chatInput.value = "";
           };
@@ -164,7 +168,7 @@
           });
 
           socket.on("agent_reply", (data) => {
-            if (data.tenantId === tenantId) {
+            if (data.tenantId === tenantId && data.conversationId === conversationId) {
               appendMessage(ui.messagesDiv, "agent", data.agentUsername, data.content);
             }
           });
@@ -175,7 +179,7 @@
         };
         shadowRoot.appendChild(socketScript);
 
-        // Initial agent count (before WebSocket is ready)
+        // Initial agent count before websocket ready
         function updateAgentStatus() {
           fetch(`http://localhost:3000/online-agents/${tenantId}`)
             .then(res => res.json())
@@ -183,8 +187,12 @@
               ui.agentStatusEl.innerText = `Agents Online: ${data.onlineAgents}`;
             });
         }
+
         updateAgentStatus();
         setInterval(updateAgentStatus, 60000);
+
+        // Finally initialize conversation & history
+        initializeConversation();
       });
   });
 })();
